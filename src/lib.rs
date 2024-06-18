@@ -1,5 +1,6 @@
 use rand::Rng;
 use std::{cmp, fmt};
+use wasm_bindgen::prelude::*;
 
 pub const ALPHABETS: [&'static str; 2] = ["bcdfglmnprstvz", "aeiou"];
 
@@ -18,14 +19,6 @@ impl fmt::Display for BananaError {
     }
 }
 
-#[derive(Default, Debug)]
-pub struct EncodeParams {
-    pub alphabet_shift: Option<usize>,
-    pub alphabet_end: Option<usize>,
-    pub min_length: Option<usize>,
-    pub alphabets: Option<Vec<String>>,
-}
-
 fn get_alphabets(alphabets: Option<&[String]>) -> Vec<Vec<char>> {
     alphabets
         .as_deref()
@@ -34,6 +27,14 @@ fn get_alphabets(alphabets: Option<&[String]>) -> Vec<Vec<char>> {
         .iter()
         .map(|alphabet| alphabet.chars().collect())
         .collect()
+}
+
+#[derive(Default, Debug)]
+pub struct EncodeParams {
+    pub alphabet_shift: Option<usize>,
+    pub alphabet_end: Option<usize>,
+    pub min_length: Option<usize>,
+    pub alphabets: Option<Vec<String>>,
 }
 
 pub fn encode(num: u64, params: &EncodeParams) -> Result<String, BananaError> {
@@ -356,4 +357,75 @@ mod tests {
             );
         }
     }
+}
+
+#[wasm_bindgen]
+pub fn banana_encode(
+    num: u64,
+    alphabet_shift: Option<usize>,
+    alphabet_end: Option<usize>,
+    min_length: Option<usize>,
+    alphabets: Option<Vec<String>>,
+) -> String {
+    encode(
+        num,
+        &EncodeParams {
+            alphabet_shift: alphabet_shift,
+            alphabet_end: alphabet_end,
+            min_length: min_length,
+            alphabets: alphabets,
+        },
+    )
+    .unwrap_or("".to_string())
+}
+
+#[wasm_bindgen]
+pub fn banana_random(
+    alphabet_shift: Option<usize>,
+    alphabet_end: Option<usize>,
+    min_length: Option<usize>,
+    alphabets: Option<Vec<String>>,
+) -> String {
+    random(&EncodeParams {
+        alphabet_shift: alphabet_shift,
+        alphabet_end: alphabet_end,
+        min_length: min_length,
+        alphabets: alphabets,
+    })
+    .unwrap_or("".to_string())
+}
+
+#[wasm_bindgen]
+pub fn banana_decode(
+    word: &str,
+    alphabet_shift: Option<usize>,
+    alphabet_end: Option<usize>,
+    alphabets: Option<Vec<String>>,
+) -> u64 {
+    decode(
+        word,
+        &DecodeParams {
+            alphabet_shift: alphabet_shift,
+            alphabet_end: alphabet_end,
+            alphabets: alphabets,
+        },
+    )
+    .unwrap_or(0)
+}
+
+#[wasm_bindgen]
+pub fn banana_is_valid(
+    word: &str,
+    alphabet_shift: Option<usize>,
+    alphabet_end: Option<usize>,
+    alphabets: Option<Vec<String>>,
+) -> bool {
+    is_valid(
+        word,
+        &DecodeParams {
+            alphabet_shift: alphabet_shift,
+            alphabet_end: alphabet_end,
+            alphabets: alphabets,
+        },
+    )
 }

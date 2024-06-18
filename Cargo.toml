@@ -1,6 +1,6 @@
 [package]
 name = "basebanana"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 license = "MIT"
 description = "baseBanana implementation"
@@ -11,6 +11,7 @@ repository = "https://github.com/bakulf/basebanana.rs"
 rand = "0.8.5"
 getrandom = { version = "0.2", features = ["js"] }
 clap = { version = "4.5.7", features = ["derive"] }
+wasm-bindgen = "0.2"
 
 [lib]
 name = "banana"

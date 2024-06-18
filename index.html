@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <title>Test for the wasm banana build</title>
+  </head>
+  <body>
+    <p>Check the console!</p>
+
+    <script type="module">
+      import init, { banana_encode, banana_random, banana_decode, banana_is_valid } from "./pkg/banana.js";
+      init().then(() => {
+        // Let's encode something
+        console.assert(banana_encode(BigInt(42)) === "pi")
+        console.assert(banana_is_valid(banana_encode(BigInt(42))))
+
+        // Let's use the params:
+        console.assert(banana_encode(BigInt(42), /* alpha shift: */1, /* end shift */1, /* min length */10) === "ababababapi");
+        console.assert(banana_is_valid(banana_encode(BigInt(42), 1, 1, 10), 1, 1))
+
+        // Custom alphabets:
+        console.assert(banana_encode(BigInt(42), 1, 1, 10, ["qwertyu", "asdfghj", "zxcvb"]) === "azqazqazua");
+        console.assert(banana_is_valid(banana_encode(BigInt(42), 1, 1, 10, ["qwertyu", "asdfghj", "zxcvb"]), 1, 1, ["qwertyu", "asdfghj", "zxcvb"]))
+
+        // Unicode alphabets:
+        console.assert(banana_encode(BigInt(42), 1, 1, 10, ["🐼🐵🦍🐶🐺🦊🐱🦁🐯🐷🐭🐹🐰🐻🐨", "⚽⚾🏀🏐🏈🏉:🍇🍉🍊🍋🍌🍍🍎🍐🍑🍒🍓🥝🥥🥑🌰"]) === "⚽🐼⚽🐼⚽🐼⚽🐼⚽🐵🥑");
+
+        // Random!
+        console.assert(banana_random().length !== 0)
+        console.assert(banana_random(1, 1, 10, ["123", "qwe", "asd"]).length === 10)
+
+        // Decoding
+        console.assert(banana_decode(banana_encode(BigInt(42))) === 42n)
+        console.assert(banana_decode(banana_encode(BigInt(42), 1, 1, 10), 1, 1) === 42n)
+        console.assert(banana_decode(banana_encode(BigInt(42), 1, 1, 10, ["qwertyu", "asdfghj", "zxcvb"]), 1, 1, ["qwertyu", "asdfghj", "zxcvb"]) === 42n)
+      });
+    </script>
+  </body>
+</html>
+
