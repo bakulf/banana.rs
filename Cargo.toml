@@ -1,0 +1,18 @@
+[package]
+name = "banana"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rand = "0.8.5"
+getrandom = { version = "0.2", features = ["js"] }
+clap = { version = "4.5.7", features = ["derive"] }
+
+[lib]
+name = "banana"
+path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "banana"
+path = "src/bin.rs"
