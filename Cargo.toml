@@ -2,6 +2,10 @@
 name = "banana"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+description = "baseBanana implementation"
+readme = "README.md"
+repository = "https://github.com/bakulf/banana.rs"
 
 [dependencies]
 rand = "0.8.5"
