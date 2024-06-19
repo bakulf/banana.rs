@@ -79,16 +79,20 @@ fn main() {
                 alphabets: args.alphabets,
             },
         ) {
-            true => {
+            Ok(v) if v == true => {
                 if !quiet {
                     println!("yes");
                 }
                 std::process::exit(0);
             }
-            false => {
+            Ok(_) => {
                 if !quiet {
                     println!("no");
                 }
+                std::process::exit(1);
+            }
+            Err(e) => {
+                eprintln!("Error: {e}");
                 std::process::exit(1);
             }
         },

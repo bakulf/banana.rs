@@ -4,7 +4,7 @@ use wasm_bindgen::prelude::*;
 
 pub const ALPHABETS: [&'static str; 2] = ["bcdfglmnprstvz", "aeiou"];
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum BananaError {
     InvalidBanana,
     InvalidAlphabet,
@@ -19,14 +19,32 @@ impl fmt::Display for BananaError {
     }
 }
 
-fn get_alphabets(alphabets: Option<&[String]>) -> Vec<Vec<char>> {
-    alphabets
+fn valid_alphabet(alphabet: &Vec<char>) -> bool {
+    for (i, c) in alphabet.iter().enumerate() {
+        if alphabet.iter().rposition(|v| c == v).unwrap() != i {
+            return false;
+        }
+    }
+
+    true
+}
+
+fn get_alphabets(alphabets: Option<&[String]>) -> Result<Vec<Vec<char>>, BananaError> {
+    let result = alphabets
         .as_deref()
         .map(|a| a.iter().map(|s| &**s).collect::<Vec<&str>>())
         .unwrap_or(ALPHABETS.to_vec())
         .iter()
         .map(|alphabet| alphabet.chars().collect())
-        .collect()
+        .collect();
+
+    for alphabet in &result {
+        if !valid_alphabet(alphabet) {
+            return Err(BananaError::InvalidAlphabet);
+        }
+    }
+
+    Ok(result)
 }
 
 #[derive(Default, Debug)]
@@ -38,7 +56,7 @@ pub struct EncodeParams {
 }
 
 pub fn encode(num: u64, params: &EncodeParams) -> Result<String, BananaError> {
-    let alphabets = get_alphabets(params.alphabets.as_deref());
+    let alphabets = get_alphabets(params.alphabets.as_deref())?;
 
     let n_alphabets = alphabets.len();
     let alphabet_shift = params.alphabet_shift.unwrap_or(0) % n_alphabets;
@@ -70,7 +88,7 @@ pub fn encode(num: u64, params: &EncodeParams) -> Result<String, BananaError> {
 }
 
 pub fn random(params: &EncodeParams) -> Result<String, BananaError> {
-    let alphabets = get_alphabets(params.alphabets.as_deref());
+    let alphabets = get_alphabets(params.alphabets.as_deref())?;
 
     let n_alphabets = alphabets.len();
 
@@ -109,7 +127,7 @@ pub struct DecodeParams {
 }
 
 pub fn decode(word: &str, params: &DecodeParams) -> Result<u64, BananaError> {
-    let alphabets = get_alphabets(params.alphabets.as_deref());
+    let alphabets = get_alphabets(params.alphabets.as_deref())?;
 
     let n_alphabets = alphabets.len();
 
@@ -133,8 +151,8 @@ pub fn decode(word: &str, params: &DecodeParams) -> Result<u64, BananaError> {
     Ok(v)
 }
 
-pub fn is_valid(word: &str, params: &DecodeParams) -> bool {
-    let alphabets = get_alphabets(params.alphabets.as_deref());
+pub fn is_valid(word: &str, params: &DecodeParams) -> Result<bool, BananaError> {
+    let alphabets = get_alphabets(params.alphabets.as_deref())?;
 
     let n_alphabets = alphabets.len();
 
@@ -142,18 +160,18 @@ pub fn is_valid(word: &str, params: &DecodeParams) -> bool {
     let alphabet_end = params.alphabet_end.unwrap_or(0) % n_alphabets;
 
     if (word.chars().count() - alphabet_end) % n_alphabets != 0 {
-        return false;
+        return Ok(false);
     }
 
     for (i, c) in word.chars().enumerate() {
         let idx = (n_alphabets + i + alphabet_shift) % n_alphabets;
         let alphabet = &alphabets[idx];
         if alphabet.iter().position(|&x| x == c).is_none() {
-            return false;
+            return Ok(false);
         }
     }
 
-    return true;
+    return Ok(true);
 }
 
 #[macro_export]
@@ -198,11 +216,62 @@ mod tests {
         ] {
             assert_eq!(encode!(test.0).unwrap(), test.1);
             assert_eq!(decode!(test.1).unwrap(), test.0);
-            assert_eq!(is_valid!(&encode!(test.0).unwrap()), true);
+            assert_eq!(is_valid!(&encode!(test.0).unwrap()).unwrap(), true);
         }
 
-        assert_eq!(is_valid!("123"), false);
+        assert_eq!(is_valid!("123").unwrap(), false);
         assert!(random!().unwrap().len() > 0)
+    }
+
+    #[test]
+    fn test_alphabet_invalid() {
+        assert_eq!(
+            encode(
+                1,
+                &EncodeParams {
+                    alphabets: Some(vec!["abc".to_string(), "123".to_string()]),
+                    ..Default::default()
+                }
+            )
+            .unwrap(),
+            "a2"
+        );
+        assert_eq!(
+            encode(
+                1,
+                &EncodeParams {
+                    alphabets: Some(vec!["aba".to_string(), "123".to_string()]),
+                    ..Default::default()
+                }
+            )
+            .err()
+            .unwrap(),
+            BananaError::InvalidAlphabet
+        );
+        assert_eq!(
+            encode(
+                1,
+                &EncodeParams {
+                    alphabets: Some(vec!["abcdefak".to_string(), "123".to_string()]),
+                    ..Default::default()
+                }
+            )
+            .err()
+            .unwrap(),
+            BananaError::InvalidAlphabet
+        );
+        assert_eq!(
+            encode(
+                1,
+                &EncodeParams {
+                    alphabets: Some(vec!["a".to_string(), "1232789".to_string()]),
+                    ..Default::default()
+                }
+            )
+            .err()
+            .unwrap(),
+            BananaError::InvalidAlphabet
+        );
     }
 
     #[test]
@@ -428,4 +497,5 @@ pub fn banana_is_valid(
             alphabets: alphabets,
         },
     )
+    .unwrap_or(false)
 }
